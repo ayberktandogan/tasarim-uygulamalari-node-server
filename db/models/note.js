@@ -1,6 +1,12 @@
 'use strict';
 module.exports = (sequelize, DataTypes) => {
   const Note = sequelize.define('Note', {
+    id: {
+      type: DataTypes.UUID,
+      defaultValue: DataTypes.UUIDV4,
+      primaryKey: true,
+      allowNull: false
+    },
     fileId: DataTypes.UUID,
     isActivated: {
       type: DataTypes.BOOLEAN,
@@ -12,7 +18,7 @@ module.exports = (sequelize, DataTypes) => {
     }
   });
   Note.associate = function (models) {
-    Note.belongsTo(models.Class)
+    Note.belongsTo(models.Department)
   };
   return Note;
 };

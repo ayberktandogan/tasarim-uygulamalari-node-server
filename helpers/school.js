@@ -6,11 +6,11 @@ const sharp = require('sharp')
 const { School } = require('../config/sequelize')
 const { downloadImageScheme } = require("../validation/helpers/downloadImage")
 
-const schoolFolderPathGenerator = ({ school_slug }) => Path.resolve(__dirname, "..", "images", "school", school_slug)
-const xsmallImagePathGenerator = ({ schoolFolderPath, foldername }) => Path.resolve(schoolFolderPath, `${foldername}.64.jpeg`)
-const smallImagePathGenerator = ({ schoolFolderPath, foldername }) => Path.resolve(schoolFolderPath, `${foldername}.128.jpeg`)
-const mediumImagePathGenerator = ({ schoolFolderPath, foldername }) => Path.resolve(schoolFolderPath, `${foldername}.256.jpeg`)
-const originalImagePathGenerator = ({ schoolFolderPath, foldername }) => Path.resolve(schoolFolderPath, `${foldername}.jpeg`)
+const schoolFolderPathGenerator = ({ school_slug }) => Path.resolve(__dirname, "..", "storage", "images", "school", school_slug)
+const xsmallImagePathGenerator = ({ schoolFolderPath, foldername }) => Path.resolve(schoolFolderPath, `${foldername}.64.png`)
+const smallImagePathGenerator = ({ schoolFolderPath, foldername }) => Path.resolve(schoolFolderPath, `${foldername}.128.png`)
+const mediumImagePathGenerator = ({ schoolFolderPath, foldername }) => Path.resolve(schoolFolderPath, `${foldername}.256.png`)
+const originalImagePathGenerator = ({ schoolFolderPath, foldername }) => Path.resolve(schoolFolderPath, `${foldername}.512.png`)
 
 async function saveCoverArt({ imageData, school_slug, foldername }) {
     const schoolFolderPath = schoolFolderPathGenerator({ school_slug })
@@ -27,13 +27,13 @@ async function saveCoverArt({ imageData, school_slug, foldername }) {
         const mediumWriter = fs.createWriteStream(mediumImagePath, { flags: 'w' })
         const originalWriter = fs.createWriteStream(originalImagePath, { flags: 'w' })
         try {
-            imageData.pipe(sharp().resize({ width: 64 })).jpeg({ quality: 90 }).pipe(xsmallWriter)
-            imageData.pipe(sharp().resize({ width: 128 })).jpeg({ quality: 90 }).pipe(smallWriter)
-            imageData.pipe(sharp().resize({ width: 256 })).jpeg({ quality: 90 }).pipe(mediumWriter)
-            imageData.pipe(sharp().jpeg({ quality: 90 }).pipe(originalWriter))
+            imageData.pipe(sharp().resize({ width: 64 })).png().pipe(xsmallWriter)
+            imageData.pipe(sharp().resize({ width: 128 })).png().pipe(smallWriter)
+            imageData.pipe(sharp().resize({ width: 256 })).png().pipe(mediumWriter)
+            imageData.pipe(sharp().resize({ width: 512 })).png().pipe(originalWriter)
         } catch (err) {
             console.log(err)
-            [smallImagePath, mediumImagePath, originalImagePath].map(path => {
+            [xsmallImagePath, smallImagePath, mediumImagePath, originalImagePath].map(path => {
                 if (fs.existsSync(path))
                     fs.unlink(path, (err) => {
                         if (err) {
@@ -51,9 +51,9 @@ async function saveCoverArt({ imageData, school_slug, foldername }) {
     }
 }
 
-async function downloadImage({ image_url, school_id, contentType }) {
+async function downloadImage({ image_url, school_id }) {
     try {
-        await downloadImageScheme.validateAsync({ image_url, school_id, contentType })
+        await downloadImageScheme.validateAsync({ image_url, school_id })
 
         let imageData = undefined
 
@@ -63,26 +63,14 @@ async function downloadImage({ image_url, school_id, contentType }) {
             throw new Error(err)
         }
 
-        const school = await School.findByPk(school_id)
-        if (!school) throw new Error(["School bulunamadı.", 404])
+        const school = await School.unscoped().findByPk(school_id)
+        if (!school) throw new Error("Okul bulunamadı!")
 
-        switch (contentType) {
-            case "cover_art": {
-                await saveCoverArt({ imageData: imageData.data, school_slug: school.slug, foldername: school.cover_art })
-                break
-            }
-            case "header_image": {
-                //
-                break
-            }
-            default: {
-                throw new Error("contentType belirtilmemiş!")
-            }
-        }
+        await saveCoverArt({ imageData: imageData.data, school_slug: school.domain, foldername: school.cover_art })
 
-        console.log(`${school.title} cover_art'ları başarıyla indirildi.`)
+        console.log(`${school.name} cover_art'ları başarıyla indirildi.`)
     } catch (err) {
-        console.log(err)
+        err.statusCode = 404
         throw new Error(err)
     }
 }
@@ -105,15 +93,8 @@ async function deleteCoverArt({ school_slug, cover_art }) {
     })
 }
 
-async function deleteImage({ school_slug, cover_art, contentType }) {
-    switch (contentType) {
-        case "cover_art": {
-            await deleteCoverArt({ school_slug, cover_art })
-        }
-        default: {
-            throw new Error("contentType belirtilmemiş!")
-        }
-    }
+async function deleteImage({ school_slug, cover_art }) {
+    await deleteCoverArt({ school_slug, cover_art })
 }
 
-module.exports = { upload, downloadImage, deleteImage }
+module.exports = { downloadImage, deleteImage }

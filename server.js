@@ -38,8 +38,16 @@ app.use(morgan('combined'))
 
 // Define routes
 const authRoutes = require('./routes/auth')
+const roleRoutes = require('./routes/role')
+const userRoleRoutes = require('./routes/user_role')
+const schoolRoutes = require('./routes/school')
+const departmentRoutes = require('./routes/department')
 // Use Routes
 app.use('/api/auth', authRoutes)
+app.use('/api/role', roleRoutes)
+app.use('/api/userRole', userRoleRoutes)
+app.use('/api/school', schoolRoutes)
+app.use('/api/department', departmentRoutes)
 
 // To use await, we define an async starter function
 async function _initializeServer() {

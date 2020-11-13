@@ -1,7 +1,17 @@
 'use strict';
 module.exports = (sequelize, DataTypes) => {
   const Department = sequelize.define('Department', {
+    id: {
+      type: DataTypes.UUID,
+      defaultValue: DataTypes.UUIDV4,
+      primaryKey: true,
+      allowNull: false
+    },
     name: DataTypes.STRING,
+    slug: {
+      type: DataTypes.STRING,
+      allowNull: false
+    },
     isActivated: {
       type: DataTypes.BOOLEAN,
       defaultValue: 0
@@ -13,7 +23,7 @@ module.exports = (sequelize, DataTypes) => {
   });
   Department.associate = function (models) {
     Department.belongsTo(models.School)
-    Department.hasMany(models.Class)
+    Department.hasMany(models.Note)
   };
   return Department;
 };

@@ -37,8 +37,8 @@ module.exports = (sequelize, DataTypes) => {
   User.associate = function (models) {
     User.hasMany(models.School)
     User.hasMany(models.Department)
-    User.hasMany(models.Class)
     User.hasMany(models.Note)
+    User.belongsToMany(models.Role, { through: models.User_Role })
   };
   return User;
 };
