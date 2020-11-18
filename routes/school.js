@@ -1,6 +1,6 @@
 const express = require('express')
 const standartSlugify = require("standard-slugify")
-const { School, User } = require('../config/sequelize')
+const { Sequelize, School, User, Note, Department } = require('../config/sequelize')
 const { downloadImage, deleteImage } = require('../helpers/school')
 const authCheck = require('../middlewares/authCheck')
 const uuid = require('uuid')
@@ -17,11 +17,42 @@ const router = express.Router()
 router.get('/admin', authCheck('see-school'), async (req, res, next) => {
     try {
         const schoolList = await School.unscoped().findAll({ include: [User] })
-        if (!schoolList) throw new Error(["Hiç okul bulunamadı!", 404])
+        if (!schoolList) return res.status(404).json({ message: "Okul bulunamadı!" })
 
         res.status(200).json(schoolList)
     } catch (err) {
-        next(err)
+        res.status(500).json({ message: "Internal server error!" })
+        console.log(err)
+    }
+})
+
+// @route   GET api/school/school-notes/:school_domain
+// @desc    Okulun not listesi
+// @access  Public
+router.get('/school-notes/:school_domain', async (req, res, next) => {
+    const { limit } = req.query
+    const { school_domain } = req.params
+    try {
+        const schoolCheck = await School.findOne({ where: { domain: school_domain } })
+        if (!schoolCheck) return res.status(404).json({ message: "Okul bulunamadı!", status: "school-not-found" })
+
+        const noteListFromSchoolDomain = await Note.findAll({
+            include: [
+                {
+                    model: Department,
+                    include: {
+                        model: School,
+                        where: { domain: school_domain }
+                    }
+                }
+            ]
+        })
+
+        res.status(200).json({ school: schoolCheck, notes: noteListFromSchoolDomain })
+    } catch (err) {
+        err.statusCode = 404
+        res.status(500).json({ message: "Internal server error!" })
+        console.log(err)
     }
 })
 
@@ -29,13 +60,31 @@ router.get('/admin', authCheck('see-school'), async (req, res, next) => {
 // @desc    Okul listesi
 // @access  Public
 router.get('/', async (req, res, next) => {
+    const { limit } = req.query
     try {
-        const schoolList = await School.findAll({ include: [User] })
-        if (!schoolList) throw new Error(["Hiç okul bulunamadı!", 404])
+        const schoolList = await School.findAll({ include: [User], limit: limit <= 50 ? Number(limit) : 50 })
+        if (!schoolList) return res.status(404).json({ message: "Okul bulunamadı!" })
 
         res.status(200).json(schoolList)
     } catch (err) {
-        next(err)
+        res.status(500).json({ message: "Internal server error!" })
+        console.log(err)
+    }
+})
+
+// @route   GET api/school/
+// @desc    Okul listesi
+// @access  Public
+router.get('/:school_id', async (req, res, next) => {
+    const { school_id } = req.params
+    try {
+        const schoolList = await School.findByPk(school_id, { include: [User, Department] })
+        if (!schoolList) return res.status(404).json({ message: "Okul bulunamadı!" })
+
+        res.status(200).json(schoolList)
+    } catch (err) {
+        res.status(500).json({ message: "Internal server error!" })
+        console.log(err)
     }
 })
 
@@ -66,8 +115,8 @@ router.post('/', authCheck('add-school'), async (req, res, next) => {
 
         res.status(200).json(newSchool)
     } catch (err) {
-
-        next(err)
+        res.status(500).json({ message: "Internal server error!" })
+        console.log(err)
     }
 })
 
@@ -81,7 +130,7 @@ router.put('/:id', authCheck('update-school'), async (req, res, next) => {
         await schoolScheme.validateAsync(req.body)
 
         let school = await School.unscoped().findByPk(id)
-        if (!school) throw new Error("Okul bulunamadı")
+        if (!school) return res.status(404).json({ message: "Okul bulunamadı!" })
 
         // Link sağlanıp sağlanmadığını kontrol et
         const changeCoverArt = school.cover_art !== req.body.cover_art
@@ -101,8 +150,8 @@ router.put('/:id', authCheck('update-school'), async (req, res, next) => {
 
         res.status(200).json(await School.unscoped().findByPk(id))
     } catch (err) {
-        err.statusCode = 404
-        next(err)
+        res.status(500).json({ message: "Internal server error!" })
+        console.log(err)
     }
 })
 
@@ -113,13 +162,14 @@ router.delete('/:id', authCheck('delete-school'), async (req, res, next) => {
     const { id } = req.params
     try {
         const school = await School.unscoped().findByPk(id)
-        if (!school) throw new Error(["Okul bulunamadı", 404])
+        if (!school) return res.status(404).json({ message: "Okul bulunamadı!" })
 
         await school.destroy({ force: true })
 
         res.status(200).json({ message: "Okul başarıyla silindi." })
     } catch (err) {
-        next(err)
+        res.status(500).json({ message: "Internal server error!" })
+        console.log(err)
     }
 })
 

@@ -11,6 +11,10 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.STRING,
       allowNull: false
     },
+    slug: {
+      type: DataTypes.STRING,
+      allowNull: false
+    },
     permission_list: {
       type: DataTypes.JSON,
       allowNull: false

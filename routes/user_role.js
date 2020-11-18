@@ -20,7 +20,8 @@ router.get('/:role_id', authCheck('see-user-role'), async (req, res, next) => {
 
         res.status(200).json(usersInRole.Users)
     } catch (err) {
-        next(err)
+        res.status(500).json({ message: "Internal server error!" })
+        console.log(err)
     }
 })
 
@@ -49,7 +50,8 @@ router.post('/:role_id', authCheck('add-user-role'), async (req, res, next) => {
 
         res.status(200).json({ message: "success" })
     } catch (err) {
-        next(err)
+        res.status(500).json({ message: "Internal server error!" })
+        console.log(err)
     }
 })
 
@@ -67,7 +69,7 @@ router.delete('/:role_id', authCheck('delete-user-role'), async (req, res, next)
         // Kullanıcının kayıtlı olduğu rolleri geçici bir arraye al
         const tempRoleList = await user.getRoles()
         // Eğer bu array boşşa hata döndür
-        if (!tempRoleList) throw new Error(["Kullanıcı hiçbir role kayıtlı değil!", 500])
+        if (!tempRoleList) return res.status(500).json({ message: "Kullanıcı hiçbir role kayıtlı değil!" })
         // Bu geçici arrayden, istenilen rolü sil
         _.remove(tempRoleList, function (n) {
             return n.id == role_id
@@ -77,7 +79,8 @@ router.delete('/:role_id', authCheck('delete-user-role'), async (req, res, next)
 
         res.status(200).json({ message: "success" })
     } catch (err) {
-        next(err)
+        res.status(500).json({ message: "Internal server error!" })
+        console.log(err)
     }
 
     res.status(200)

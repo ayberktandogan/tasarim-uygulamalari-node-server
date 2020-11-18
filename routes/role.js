@@ -12,11 +12,12 @@ const { Role } = require('../config/sequelize')
 router.get('/', authCheck('see-role'), async (req, res, next) => {
     try {
         const roleList = await Role.findAll()
-        if (!roleList) throw new Error(["Hiç rol bulunamadı!", 404])
+        if (!roleList) return res.status(404).json({ message: "Rol bulunamadı!" })
 
         res.status(200).json(roleList)
     } catch (err) {
-        next(err)
+        res.status(500).json({ message: "Internal server error!" })
+        console.log(err)
     }
 })
 
@@ -28,13 +29,14 @@ router.post('/', authCheck('add-role'), async (req, res, next) => {
         await roleScheme.validateAsync(req.body)
 
         const role = await Role.findOne({ where: { title: req.body.title } })
-        if (role) throw new Error(["Rol zaten var!", 400])
+        if (role) return res.status(400).json({ message: "Rol zaten var!" })
 
         const newRole = await Role.create({ ...req.body, createdById: req.authUser.id })
 
         res.status(200).json(newRole)
     } catch (err) {
-        next(err)
+        res.status(500).json({ message: "Internal server error!" })
+        console.log(err)
     }
 })
 
@@ -47,7 +49,7 @@ router.put('/:id', authCheck('update-role'), async (req, res, next) => {
         await roleScheme.validateAsync(req.body)
 
         let role = await Role.findByPk(id)
-        if (!role) throw new Error(["Rol bulunamadı", 404])
+        if (!role) return res.status(404).json({ message: "Rol bulunamadı!" })
 
         let duplicateRole = await Role.findOne({ where: { title: req.body.title } })
         if (duplicateRole) throw new Error("Bu rol adı kullanılıyor!", 400)
@@ -56,7 +58,8 @@ router.put('/:id', authCheck('update-role'), async (req, res, next) => {
 
         res.status(200).json(role)
     } catch (err) {
-        next(err)
+        res.status(500).json({ message: "Internal server error!" })
+        console.log(err)
     }
 })
 
@@ -67,13 +70,14 @@ router.delete('/:id', authCheck('delete-role'), async (req, res, next) => {
     const { id } = req.params
     try {
         const role = await Role.findByPk(id)
-        if (!role) throw new Error(["Rol bulunamadı", 404])
+        if (!role) return res.status(404).json({ message: "Rol bulunamadı!" })
 
         await role.destroy()
 
         res.status(200).json({ message: "Rol başarıyla silindi." })
     } catch (err) {
-        next(err)
+        res.status(500).json({ message: "Internal server error!" })
+        console.log(err)
     }
 })
 

@@ -11,14 +11,6 @@ const departmentScheme = Joi.object({
             'string.min': `"Bölüm adı" en az 2 karakter olmalı`,
             'any.required': `"Bölüm adı" boş bırakılamaz`
         }),
-    SchoolId: Joi.string()
-        .uuid()
-        .required()
-        .messages({
-            'string.base': `"Okul idsi" UUID olmalı`,
-            'string.empty': `"Okul idsi" boş bırakılamaz`,
-            'any.required': `"Okul idsi" boş bırakılamaz`
-        }),
     isActivated: Joi.boolean()
         .messages({
             'string.base': `"Aktivasyon durumu" bool olmalı`,

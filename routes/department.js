@@ -13,11 +13,12 @@ const router = express.Router()
 router.get('/admin', authCheck('see-department'), async (req, res, next) => {
     try {
         const departmentList = await Department.unscoped().findAll()
-        if (!departmentList) throw new Error("Hiç bölüm bulunamadı!", 404)
+        if (!departmentList) return res.status(404).json({ message: "Bölüm bulunamadı!" })
 
         res.status(200).json(departmentList)
     } catch (err) {
-        next(err)
+        res.status(500).json({ message: "Internal server error!" })
+        console.log(err)
     }
 })
 
@@ -25,13 +26,15 @@ router.get('/admin', authCheck('see-department'), async (req, res, next) => {
 // @desc    Bölüm listesi
 // @access  Public
 router.get('/', async (req, res, next) => {
+    const { limit } = req.query
     try {
-        const departmentList = await Department.findAll()
-        if (!departmentList) throw new Error("Hiç bölüm bulunamadı!", 404)
+        const departmentList = await Department.findAll({ limit: limit <= 50 ? Number(limit) : 50 })
+        if (!departmentList) return res.status(404).json({ message: "Bölüm bulunamadı!" })
 
         res.status(200).json(departmentList)
     } catch (err) {
-        next(err)
+        res.status(500).json({ message: "Internal server error!" })
+        console.log(err)
     }
 })
 
@@ -43,14 +46,15 @@ router.post('/', authCheck('add-department'), async (req, res, next) => {
         await departmentScheme.validateAsync(req.body)
 
         const department = await Department.unscoped().findOne({ where: { slug: standartSlugify(req.body.name), SchoolId: req.body.SchoolId } })
-        if (department) throw new Error("Bölüm zaten var!", 400)
+        if (department) return res.status(400).json({ message: "Bölüm zaten var!" })
 
         // Bölümü oluştur, bölümü açan kişinin idsini ve bölüm slug'ını özel oluştur
-        const newDepartment = await Department.create({ ...req.body, isActivated: 0, UserId: req.authUser.id, slug: standartSlugify(req.body.name) })
+        const newDepartment = await Department.create({ ...req.body, isActivated: 1, UserId: req.authUser.id, slug: standartSlugify(req.body.name) })
 
         res.status(200).json(newDepartment)
     } catch (err) {
-        next(err)
+        res.status(500).json({ message: "Internal server error!" })
+        console.log(err)
     }
 })
 
@@ -63,13 +67,14 @@ router.put('/:id', authCheck('update-department'), async (req, res, next) => {
         await departmentScheme.validateAsync(req.body)
 
         let department = await Department.unscoped().findByPk(id)
-        if (!department) throw new Error("Bölüm bulunamadı", 404)
+        if (!department) return res.status(404).json({ message: "Bölüm bulunamadı!" })
 
         await department.update({ ...req.body })
 
         res.status(200).json(department)
     } catch (err) {
-        next(err)
+        res.status(500).json({ message: "Internal server error!" })
+        console.log(err)
     }
 })
 
@@ -80,13 +85,14 @@ router.delete('/:id', authCheck('delete-department'), async (req, res, next) => 
     const { id } = req.params
     try {
         const department = await Department.unscoped().findByPk(id)
-        if (!department) throw new Error("Bölüm bulunamadı", 404)
+        if (!department) return res.status(404).json({ message: "Bölüm bulunamadı!" })
 
         await department.destroy()
 
         res.status(200).json({ message: "Bölüm başarıyla silindi." })
     } catch (err) {
-        next(err)
+        res.status(500).json({ message: "Internal server error!" })
+        console.log(err)
     }
 })
 

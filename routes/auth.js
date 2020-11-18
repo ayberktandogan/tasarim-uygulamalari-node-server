@@ -3,7 +3,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const standartSlugify = require("standard-slugify");
 const MD5 = require("crypto-js/md5")
-const { User, Pending_User } = require('../config/sequelize');
+const { User, Pending_User, Role, User_Role } = require('../config/sequelize');
 const { sendMail } = require('../helpers/mailer');
 
 const router = express.Router()
@@ -44,7 +44,7 @@ router.post('/kayit-ol', async (req, res, next) => {
 
         await sendMail({ type: "register_mail", hash: confirmationHash, to: email })
 
-        return res.status(200).json({ message: "Kullanıcı başarıyla oluşturuldu", payload: { username, email, id: createUser.id } })
+        return res.status(200).json({ message: "Kullanıcı başarıyla oluşturuldu. Lütfen mail adresinizi doğrulayın.", payload: { username, email, id: createUser.id } })
     } catch (err) {
         const res = await User.destroy({ where: { username }, force: true })
         err.statusCode = 400
@@ -52,10 +52,10 @@ router.post('/kayit-ol', async (req, res, next) => {
     }
 })
 
-// @route   GET api/kullanici/giris-yap
+// @route   POST api/kullanici/giris-yap
 // @desc    Kullanıcıya token üret
 // @access  Public
-router.get('/giris-yap', async (req, res, next) => {
+router.post('/giris-yap', async (req, res, next) => {
     const { password, email } = req.body
 
     try {
@@ -63,11 +63,11 @@ router.get('/giris-yap', async (req, res, next) => {
 
         const user = await User.findOne({ where: { email }, attributes: ["id", "username", "password"] })
         if (!user) {
-            return next()
+            return res.status(400).json({ message: "Email adresi ya da şifre hatalı" })
         }
 
         const check = await bcrypt.compare(password, user.password)
-        if (!check) return res.status(400).message({ message: "Şifre yanlış" })
+        if (!check) return res.status(400).json({ message: "Email adresi ya da şifre hatalı" })
 
         const token = await jwt.sign(
             {
@@ -99,11 +99,13 @@ router.get('/kullanici-dogrula/:confirmationHash', async (req, res, next) => {
     try {
         const pendingUser = await Pending_User.findOne({ where: { hash: confirmationHash } })
 
-        if (!pendingUser) throw new Error("")
+        if (!pendingUser) return res.status(404).json({ message: "Doğrulama IDsi bulunamadı!" })
 
+        const defaultRole = await Role.findOne({ where: { slug: "default" } })
+        if (!defaultRole) return res.status(500).json({ message: "Database sorunu!" })
+        await User_Role.create({ UserId: pendingUser.UserId, RoleId: defaultRole.id })
         await User.update({ isActivated: 1 }, { where: { id: pendingUser.UserId } })
         await pendingUser.destroy()
-
         return res.status(200).json({ message: "Kullanıcı başarıyla doğrulandı." })
     } catch (err) {
         err.statusCode = 404
