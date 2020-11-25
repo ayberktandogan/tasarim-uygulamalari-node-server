@@ -10,7 +10,8 @@ module.exports = (sequelize, DataTypes) => {
     name: DataTypes.STRING,
     slug: {
       type: DataTypes.STRING,
-      allowNull: false
+      allowNull: false,
+      unique: true
     },
     isActivated: {
       type: DataTypes.BOOLEAN,

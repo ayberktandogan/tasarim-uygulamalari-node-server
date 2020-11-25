@@ -10,5 +10,17 @@ module.exports = [
     "see-department",
     "add-department",
     "update-department",
-    "delete-department"
+    "delete-department",
+    "see-school",
+    "add-school",
+    "update-school",
+    "delete-school",
+    "see-note",
+    "add-note",
+    "update-note",
+    "delete-note",
+    "see-user",
+    "add-user",
+    "update-user",
+    "delete-user"
 ]

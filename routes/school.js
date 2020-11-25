@@ -39,12 +39,13 @@ router.get('/school-notes/:school_domain', async (req, res, next) => {
         const noteListFromSchoolDomain = await Note.findAll({
             include: [
                 {
-                    model: Department,
-                    include: {
-                        model: School,
-                        where: { domain: school_domain }
+                    model: School,
+                    where: {
+                        id: { [Sequelize.Op.col]: "Note.SchoolId" },
+                        domain: school_domain
                     }
-                }
+                },
+                Department
             ]
         })
 

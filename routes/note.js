@@ -3,7 +3,7 @@ const standartSlugify = require("standard-slugify")
 const PDFMerger = require('pdf-merger-js')
 const Path = require('path')
 const uuidv4 = require('uuid').v4
-const { Note, Department } = require('../config/sequelize')
+const { Note, School } = require('../config/sequelize')
 const { upload, clearNoteFolder, deleteNoteFolder, createUUID } = require('../helpers/school')
 const authCheck = require('../middlewares/authCheck')
 
@@ -33,6 +33,22 @@ router.get('/', async (req, res, next) => {
     const { limit } = req.query
     try {
         const noteList = await Note.findAll({ limit: limit <= 50 ? Number(limit) : 50 })
+        if (!noteList) return res.status(404).json({ message: "Not bulunamadı!" })
+
+        res.status(200).json(noteList)
+    } catch (err) {
+        res.status(500).json({ message: "Internal server error!" })
+        console.log(err)
+    }
+})
+
+// @route   GET api/bolum/
+// @desc    Not listesi
+// @access  Public
+router.get('/:note_id', async (req, res, next) => {
+    const { note_id } = req.params
+    try {
+        const noteList = await Note.findByPk(note_id, { include: [School] })
         if (!noteList) return res.status(404).json({ message: "Not bulunamadı!" })
 
         res.status(200).json(noteList)
@@ -73,7 +89,14 @@ router.post('/', createUUID(), authCheck('add-note'), async (req, res, next) => 
             await clearNoteFolder(SchoolId, DepartmentId, note_id, req.files)
 
             // Notu alınan özel id ile oluştur, notu açan kişinin idsini ve bölüm slug'ını özel oluştur
-            const newNote = await Note.create({ ...req.body, id: note_id, isActivated: 0, UserId: req.authUser.id, DepartmentId, fileId: fileId })
+            const newNote = await Note.create({
+                ...req.body,
+                id: note_id,
+                isActivated: process.env.NODE_ENV === "development" ? 1 : 0,
+                UserId: req.authUser.id,
+                DepartmentId,
+                fileId: fileId
+            })
 
             res.status(200).json(newNote)
         } catch (err) {

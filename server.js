@@ -6,6 +6,7 @@ const cors = require('cors')
 const morgan = require('morgan')
 const { sequelize, Role, Department } = require('./config/sequelize')
 const standartSlugify = require('standard-slugify')
+const routes = require('./routes')
 
 const app = express()
 
@@ -37,28 +38,10 @@ if (process.env.REVERSE_PROXY) {
 // Use morgan middleware
 app.use(morgan('combined'))
 
+
 // Define routes
-const authRoutes = require('./routes/auth')
-const roleRoutes = require('./routes/role')
-const userRoleRoutes = require('./routes/user_role')
-const schoolRoutes = require('./routes/school')
-const departmentRoutes = require('./routes/department')
-const noteRoutes = require('./routes/note')
-const proxyRoutes = require('./routes/proxy')
+app.use("/", routes)
 
-// Use Routes
-app.use('/api/v1/auth', authRoutes)
-app.use('/api/v1/role', roleRoutes)
-app.use('/api/v1/userRole', userRoleRoutes)
-app.use('/api/v1/school', schoolRoutes)
-app.use('/api/v1/department', departmentRoutes)
-app.use('/api/v1/note', noteRoutes)
-app.use('/api/v1/proxy', proxyRoutes)
-
-//
-app.use('/*', (_, res) => {
-    res.status(404).json({ message: "Aradığınız yol burada değil." })
-});
 
 // To use await, we define an async starter function
 async function _initializeServer() {
@@ -69,13 +52,31 @@ async function _initializeServer() {
         // sync models with database
         await sequelize.sync()
         // create default role
-        await Role.findOrCreate({ where: { slug: "default" }, defaults: { title: "Kullanıcı", slug: "default", permission_list: require('./config/permission_list') } })
-        // add default departments
-        const tempDepartmentArray = []
-        for (const department of require('./config/allowed_departments_list')) {
-            tempDepartmentArray.push({ name: department, isActivated: 1, slug: standartSlugify(department) })
+        await Role.findOrCreate({
+            where: { slug: "default" },
+            defaults: {
+                title: "Kullanıcı",
+                slug: "default",
+                permission_list: require('./config/default_permission_list')
+            }
+        })
+        await Role.findOrCreate({
+            where: { slug: "admin" },
+            defaults: {
+                title: "Admin",
+                slug: "admin",
+                permission_list: require('./config/permission_list')
+            }
+        })
+        // if departmens table empty, add default departments
+        const deparments = await Department.findAll()
+        if (!deparments.length) {
+            const tempDepartmentArray = []
+            for (const department of require('./config/allowed_departments_list')) {
+                tempDepartmentArray.push({ name: department, isActivated: 1, slug: standartSlugify(department) })
+            }
+            await Department.bulkCreate(tempDepartmentArray)
         }
-        await Department.bulkCreate(tempDepartmentArray)
     } catch (err) {
         return console.error('❌ Database bağlantısı başarısız oldu:', err)
     }

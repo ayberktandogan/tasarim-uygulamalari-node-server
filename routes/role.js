@@ -1,5 +1,6 @@
 const express = require('express')
 const authCheck = require('../middlewares/authCheck')
+const standartSlugify = require('standard-slugify')
 const { roleScheme } = require('../validation/role')
 
 const router = express.Router()
@@ -31,7 +32,7 @@ router.post('/', authCheck('add-role'), async (req, res, next) => {
         const role = await Role.findOne({ where: { title: req.body.title } })
         if (role) return res.status(400).json({ message: "Rol zaten var!" })
 
-        const newRole = await Role.create({ ...req.body, createdById: req.authUser.id })
+        const newRole = await Role.create({ ...req.body, slug: standartSlugify(req.body.title), createdById: req.authUser.id })
 
         res.status(200).json(newRole)
     } catch (err) {

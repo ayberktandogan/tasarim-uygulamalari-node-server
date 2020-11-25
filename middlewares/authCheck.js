@@ -23,8 +23,16 @@ module.exports = function (permission) {
             // Token'i kontrol et
             const validatedUser = await jwt.verify(token, process.env.LOG_SECRET_KEY)
             // Token içerisindeki id'ye göre kullanıcının rollerini bul
-            const UserAuthPerms = await User.findByPk(validatedUser.user_id, { attributes: ["id"], include: Role })
+            const UserAuthPerms = await User.findByPk(validatedUser.user_id, { include: [Role] })
             if (!UserAuthPerms) throw new Error("")
+            // merge all permission nodes
+            let roles = []
+            for (const role of UserAuthPerms.Roles) {
+                roles = [...roles, ...JSON.parse(role.permission_list)]
+            }
+            // find required permission from merged permission list
+            const isPermitted = _.find(roles, function (r) { return r === permission })
+            if (!isPermitted) throw new Error("")
             // Bulunan kullanıcıyı yolla
             req.authUser = UserAuthPerms
             next()
