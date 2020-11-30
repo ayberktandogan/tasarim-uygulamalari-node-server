@@ -3,7 +3,7 @@ const standartSlugify = require("standard-slugify")
 const PDFMerger = require('pdf-merger-js')
 const Path = require('path')
 const uuidv4 = require('uuid').v4
-const { Note, School } = require('../config/sequelize')
+const { Note, School, Department } = require('../config/sequelize')
 const { upload, clearNoteFolder, deleteNoteFolder, createUUID } = require('../helpers/school')
 const authCheck = require('../middlewares/authCheck')
 
@@ -98,7 +98,7 @@ router.post('/', createUUID(), authCheck('add-note'), async (req, res, next) => 
                 fileId: fileId
             })
 
-            res.status(200).json(newNote)
+            res.status(200).json(await Note.findByPk(newNote.id, { include: [Department] }))
         } catch (err) {
             res.status(500).json({ message: "Internal server error!" })
             console.log(err)

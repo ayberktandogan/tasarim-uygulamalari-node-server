@@ -40,7 +40,7 @@ const note_episode_storage = multer.diskStorage({
 
         // Notun yüklenmeye çalışılan bölüme daha önceden aynı isimli bir not açılmış mı diye bak
         const note = await Note.unscoped().findOne({ where: { SchoolId, DepartmentId, name } })
-        if (note) return cb(new Error("Bölüm zaten var!"))
+        if (note) return cb(new Error("Aynı isimli bir not zaten var!"))
 
         // ./storage/notes/yildiz.edu.tr/2d6235ce-5715-4c37-a408-9411322f3282/1c9efc3e-739f-4c21-be4b-f8c15d4cb082/8321fc3e-44T8-4c21-be4b-f8c15d4cb082.pdf
         const path = Path.resolve(__dirname, note_file_path, school.domain, DepartmentId, req.note_id_create)

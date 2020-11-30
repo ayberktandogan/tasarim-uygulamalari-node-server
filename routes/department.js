@@ -28,7 +28,7 @@ router.get('/admin', authCheck('see-department'), async (req, res, next) => {
 router.get('/', async (req, res, next) => {
     const { limit } = req.query
     try {
-        const departmentList = await Department.findAll({ limit: limit <= 50 ? Number(limit) : 50 })
+        const departmentList = await Department.findAll({ limit: Number(limit) || undefined, order: ["name"] })
         if (!departmentList) return res.status(404).json({ message: "Bölüm bulunamadı!" })
 
         res.status(200).json(departmentList)

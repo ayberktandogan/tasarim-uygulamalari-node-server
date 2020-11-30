@@ -9,6 +9,26 @@ const authCheckSchema = Joi.object({
 
 const { Role, User } = require('../config/sequelize')
 
+async function _authCheck(permission, user) {
+    try {
+        // Token içerisindeki id'ye göre kullanıcının rollerini bul
+        const UserAuthPerms = user
+        if (!UserAuthPerms) throw new Error("")
+        // merge all permission nodes
+        let roles = []
+        for (const role of UserAuthPerms.Roles) {
+            roles = [...roles, ...JSON.parse(role.permission_list)]
+        }
+        // find required permission from merged permission list
+        const isPermitted = _.find(roles, function (r) { return r === permission })
+        if (!isPermitted) throw new Error("")
+        // Bulunan kullanıcıyı yolla
+        return true
+    } catch (err) {
+        return false
+    }
+}
+
 module.exports = function (permission) {
     return async function (req, res, next) {
         try {
@@ -30,6 +50,7 @@ module.exports = function (permission) {
             for (const role of UserAuthPerms.Roles) {
                 roles = [...roles, ...JSON.parse(role.permission_list)]
             }
+            console.log(roles)
             // find required permission from merged permission list
             const isPermitted = _.find(roles, function (r) { return r === permission })
             if (!isPermitted) throw new Error("")
@@ -37,7 +58,10 @@ module.exports = function (permission) {
             req.authUser = UserAuthPerms
             next()
         } catch (err) {
+            console.log(err)
             return res.status(403).json({ message: "Bu işlemi gerçekleştirmek için yetkiniz yok!" })
         }
     }
 }
+
+module.exports._authCheck = _authCheck
