@@ -42,7 +42,6 @@ app.use(morgan('combined'))
 // Define routes
 app.use("/", routes)
 
-
 // To use await, we define an async starter function
 async function _initializeServer() {
     try {
@@ -52,27 +51,28 @@ async function _initializeServer() {
         // sync models with database
         await sequelize.sync()
         // create default role
-        await Role.findOrCreate({
-            where: { slug: "default" },
-            defaults: {
-                title: "Kullanıcı",
+		const default_permission_list = require('./config/default_permission_list')
+		const permission_list = require('./config/permission_list')
+        const defaultRole = await Role.findOne({where: {slug: "default"}})
+		if(!defaultRole){
+			await Role.create({title: "Kullanıcı",
                 slug: "default",
-                permission_list: require('./config/default_permission_list')
-            }
-        })
-        await Role.findOrCreate({
-            where: { slug: "admin" },
-            defaults: {
-                title: "Admin",
+                permission_list: JSON.stringify(default_permission_list)
+			})
+		}
+		const adminRole = await Role.findOne({where: {slug: "admin"}})
+		if(!adminRole){
+			await Role.create({
+				title: "Admin",
                 slug: "admin",
-                permission_list: require('./config/permission_list')
-            }
-        })
+                permission_list: JSON.stringify(permission_list)
+			})
+		}
         // if departmens table empty, add default departments
         const deparments = await Department.findAll()
         if (!deparments.length) {
             const tempDepartmentArray = []
-            for (const department of require('./config/allowed_departments_list')) {
+            for (const department of require('./config/allowed_departments_list').default) {
                 tempDepartmentArray.push({ name: department, isActivated: 1, slug: standartSlugify(department) })
             }
             await Department.bulkCreate(tempDepartmentArray)

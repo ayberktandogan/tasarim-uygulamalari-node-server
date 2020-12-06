@@ -105,6 +105,8 @@ router.post('/giris-yap', async (req, res, next) => {
 // @access  Public
 router.get('/kullanici-dogrula/:confirmationHash', async (req, res, next) => {
     const { confirmationHash } = req.params
+	
+	console.log(confirmationHash)
 
     try {
         const pendingUser = await Pending_User.findOne({ where: { hash: confirmationHash } })
