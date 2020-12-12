@@ -21,9 +21,9 @@ router.post('/kayit-ol', async (req, res, next) => {
     try {
         await userRegisterScheme.validateAsync(req.body)
 
-        const userCheck = await User.findOne({ where: { username, email }, paranoid: false })
-
-        if (userCheck) {
+        const emailCheck = await User.findOne({ where: { email }, paranoid: false })
+        const usernameCheck = await User.findOne({ where: { username }, paranoid: false })
+        if (emailCheck || usernameCheck) {
             return res.status(400).json({ message: "Kullanıcı adı veya email zaten kullanılıyor" })
         }
 
@@ -86,8 +86,6 @@ router.post('/giris-yap', async (req, res, next) => {
             }
         )
 
-        console.log(_authCheck("see-admin-page", user))
-
         return res.status(200).json({
             success: true,
             token: "Bearer " + token,
@@ -105,8 +103,8 @@ router.post('/giris-yap', async (req, res, next) => {
 // @access  Public
 router.get('/kullanici-dogrula/:confirmationHash', async (req, res, next) => {
     const { confirmationHash } = req.params
-	
-	console.log(confirmationHash)
+
+    console.log(confirmationHash)
 
     try {
         const pendingUser = await Pending_User.findOne({ where: { hash: confirmationHash } })

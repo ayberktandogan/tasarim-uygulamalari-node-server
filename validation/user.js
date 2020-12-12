@@ -23,7 +23,12 @@ const userRegisterScheme = Joi.object({
             'any.required': `"Şifre" boş bırakılamaz`
         }),
     repeat_password: Joi.ref('password'),
-    email: Joi.string().email({ minDomainSegments: 2, tlds: { allow: ['com', 'net'] } }).required()
+    email: Joi.string()
+        .email({ minDomainSegments: 2, tlds: { allow: ['com', 'net', 'moe'] } })
+        .required()
+        .messages({
+            'string.email': `Email adresinizle giriş yapmanız gerekiyor`,
+        })
 }).with('password', 'repeat_password')
 
 const userLoginScheme = Joi.object({
@@ -36,7 +41,12 @@ const userLoginScheme = Joi.object({
             'string.min': `"Şifre" en az 6 karakter olmalı`,
             'any.required': `"Şifre" boş bırakılamaz`
         }),
-    email: Joi.string().email({ minDomainSegments: 2, tlds: { allow: ['com', 'net'] } }).required()
+    email: Joi.string()
+        .email({ minDomainSegments: 2, tlds: { allow: ['com', 'net'] } })
+        .required()
+        .messages({
+            'string.email': `Email adresinizle giriş yapmanız gerekiyor`,
+        })
 })
 
 module.exports = { userRegisterScheme, userLoginScheme }

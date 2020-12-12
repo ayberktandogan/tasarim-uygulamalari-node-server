@@ -32,6 +32,7 @@ router.get('/admin', authCheck('see-school'), async (req, res, next) => {
 router.get('/school-notes/:school_domain', async (req, res, next) => {
     const { limit } = req.query
     const { school_domain } = req.params
+    const { DepartmentId } = req.query
     try {
         const schoolCheck = await School.findOne({ where: { domain: school_domain } })
         if (!schoolCheck) return res.status(404).json({ message: "Okul bulunamadı!", status: "school-not-found" })
@@ -45,7 +46,12 @@ router.get('/school-notes/:school_domain', async (req, res, next) => {
                         domain: school_domain
                     }
                 },
-                Department
+                {
+                    model: Department,
+                    where: DepartmentId ? {
+                        id: DepartmentId
+                    } : undefined
+                }
             ]
         })
 

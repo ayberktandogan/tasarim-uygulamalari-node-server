@@ -1,6 +1,5 @@
 const Joi = require('joi')
 const jwt = require('jsonwebtoken')
-const permission_list = require('../config/permission_list')
 const _ = require('lodash')
 
 const authCheckSchema = Joi.object({
@@ -50,7 +49,6 @@ module.exports = function (permission) {
             for (const role of UserAuthPerms.Roles) {
                 roles = [...roles, ...JSON.parse(role.permission_list)]
             }
-            console.log(roles)
             // find required permission from merged permission list
             const isPermitted = _.find(roles, function (r) { return r === permission })
             if (!isPermitted) throw new Error("")
@@ -58,7 +56,6 @@ module.exports = function (permission) {
             req.authUser = UserAuthPerms
             next()
         } catch (err) {
-            console.log(err)
             return res.status(403).json({ message: "Bu işlemi gerçekleştirmek için yetkiniz yok!" })
         }
     }
