@@ -67,9 +67,9 @@ router.get('/school-notes/:school_domain', async (req, res, next) => {
 // @desc    Okul listesi
 // @access  Public
 router.get('/', async (req, res, next) => {
-    const { limit } = req.query
+    const { limit, offset } = req.query
     try {
-        const schoolList = await School.findAll({ include: [User], limit: limit <= 50 ? Number(limit) : 50 })
+        const schoolList = await School.findAndCountAll({ include: [User], order: ["name"], limit: limit <= 24 ? Number(limit) : 24, offset: offset ? Number(offset) : undefined })
         if (!schoolList) return res.status(404).json({ message: "Okul bulunamadı!" })
 
         res.status(200).json(schoolList)
@@ -82,10 +82,24 @@ router.get('/', async (req, res, next) => {
 // @route   GET api/school/
 // @desc    Okul listesi
 // @access  Public
-router.get('/:school_id', async (req, res, next) => {
-    const { school_id } = req.params
+router.get('/:school_domain', async (req, res, next) => {
+    const { school_domain } = req.params
+    const { DepartmentId } = req.query
     try {
-        const schoolList = await School.findByPk(school_id, { include: [User, Department] })
+        const schoolList = await School.findOne({
+            where: { domain: school_domain },
+            include: [
+                User,
+                {
+                    model: Note,
+                    required: false,
+                    where: DepartmentId ? {
+                        DepartmentId: DepartmentId
+                    } : undefined,
+                    include: [Department]
+                }
+            ]
+        })
         if (!schoolList) return res.status(404).json({ message: "Okul bulunamadı!" })
 
         res.status(200).json(schoolList)
