@@ -24,10 +24,10 @@ const userRegisterScheme = Joi.object({
         }),
     repeat_password: Joi.ref('password'),
     email: Joi.string()
-        .email({ minDomainSegments: 2, tlds: { allow: ['com', 'net', 'moe'] } })
+        .email()
         .required()
         .messages({
-            'string.email': `Email adresinizle giriş yapmanız gerekiyor`,
+            'string.email': `Email adresinizle kayıt olmanız gerekiyor`,
         })
 }).with('password', 'repeat_password')
 
@@ -42,7 +42,7 @@ const userLoginScheme = Joi.object({
             'any.required': `"Şifre" boş bırakılamaz`
         }),
     email: Joi.string()
-        .email({ minDomainSegments: 2, tlds: { allow: ['com', 'net'] } })
+        .email()
         .required()
         .messages({
             'string.email': `Email adresinizle giriş yapmanız gerekiyor`,

@@ -31,12 +31,14 @@ async function sendMail({ to, hash, type }) {
 
     // Create nodemailer transport
     const transporter = nodemailer.createTransport({
-        host: SMTP_USE_TEST_ACC !== "true" ? process.env.SMTP_HOST : "smtp.ethereal.email",
-        port: Number(SMTP_USE_TEST_ACC !== "true" ? process.env.SMTP_PORT : 587),
+        host: SMTP_USE_TEST_ACC !== "true" ? process.env.SMTP_HOST : testAccount.smtp.host,
+        port: Number(SMTP_USE_TEST_ACC !== "true" ? process.env.SMTP_PORT : testAccount.smtp.port),
+        secure: SMTP_USE_TEST_ACC !== "true" ? process.env.SMTP_SECURE : testAccount.smtp.secure,
         auth: {
             user: SMTP_USE_TEST_ACC !== "true" ? process.env.SMTP_USERNAME : testAccount.user,
             pass: SMTP_USE_TEST_ACC !== "true" ? process.env.SMTP_PASSWORD : testAccount.pass
-        }
+        },
+        tls: { rejectUnauthorized: false }
     })
 
     const mailOptions = {
@@ -50,7 +52,10 @@ async function sendMail({ to, hash, type }) {
     try {
         const info = await transporter.sendMail(mailOptions);
         console.log("Message sent: %s", info.messageId);
-        if (SMTP_USE_TEST_ACC === "true") console.log("Preview URL: %s", nodemailer.getTestMessageUrl(info))
+        if (SMTP_USE_TEST_ACC === "true") {
+            console.log("Preview URL: %s", nodemailer.getTestMessageUrl(info))
+            return { previewMail: nodemailer.getTestMessageUrl(info), verifyHash: hash }
+        }
     } catch (err) {
         throw new Error(`Mail yollanamadı: ${err}`)
     }
@@ -115,7 +120,7 @@ function getButtonErrorText(type) {
 function getURL(type, hash) {
     switch (type) {
         case "register_mail": {
-            return `${process.env.HOST_URL}/kullanici/hesap-dogrula/${hash}`
+            return `${process.env.HOST_URL}/kullanici-dogrula/${hash}`
         }
         default: {
             return "null"

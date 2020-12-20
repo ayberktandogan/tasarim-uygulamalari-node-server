@@ -43,9 +43,18 @@ router.post('/kayit-ol', async (req, res, next) => {
             UserId: createUser.id
         })
 
-        await sendMail({ type: "register_mail", hash: confirmationHash, to: email })
+        let mailRes = await sendMail({ type: "register_mail", hash: confirmationHash, to: email })
 
-        return res.status(200).json({ message: "Kullanıcı başarıyla oluşturuldu. Lütfen mail adresinizi doğrulayın.", payload: { username, email, id: createUser.id } })
+        return res.status(200).json({
+            message: "Kullanıcı başarıyla oluşturuldu. Lütfen mail adresinizi doğrulayın.",
+            payload: {
+                username,
+                email,
+                id: createUser.id,
+                previewMail: mailRes && mailRes.previewMail ? mailRes.previewMail : null,
+                verifyHash: mailRes && mailRes.verifyHash ? mailRes.verifyHash : null
+            }
+        })
     } catch (err) {
         const res = await User.destroy({ where: { username }, force: true })
         err.statusCode = 400
